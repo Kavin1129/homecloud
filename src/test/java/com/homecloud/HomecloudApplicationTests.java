@@ -1,4 +1,4 @@
-package com.homecloud.homecloud;
+package com.homecloud;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

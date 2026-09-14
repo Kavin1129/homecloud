@@ -18,6 +18,11 @@ public class User {
 
     protected User (){}
 
+    public User(String kavin, String mail) {
+        this.username = kavin;
+        this.email = mail;
+    }
+
     public Long getId() {
         return id;
     }
