@@ -5,22 +5,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @SpringBootTest
 @Transactional
 class UserRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Test
-    void shouldSaveUser() {
-
-        User user = new User("kavin-test", "kavin-test@example.com");
-
-        User savedUser = userRepository.save(user);
-
-        System.out.println("Generated ID: " + savedUser.getId());
-    }
 
     @Test
     void shouldSaveAndFindUser() {
@@ -32,9 +25,22 @@ class UserRepositoryTest {
         User foundUser = userRepository.findById(savedUser.getId())
                 .orElseThrow();
 
-        System.out.println("ID: " + foundUser.getId());
-        System.out.println("Username: " + foundUser.getUsername());
-        System.out.println("Email: " + foundUser.getEmail());
+        assertEquals(savedUser.getId(), foundUser.getId());
+        assertEquals("kavin-test", foundUser.getUsername());
+        assertEquals("kavin-test@example.com", foundUser.getEmail());
     }
+
+    @Test
+    void shouldSaveUser() {
+
+        User user = new User("kavin-test", "kavin-test@example.com");
+
+        User savedUser = userRepository.save(user);
+
+        assertNotNull(savedUser.getId());
+        assertEquals("kavin-test", savedUser.getUsername());
+        assertEquals("kavin-test@example.com", savedUser.getEmail());
+    }
+
 
 }
