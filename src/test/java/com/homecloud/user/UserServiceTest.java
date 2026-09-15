@@ -1,13 +1,15 @@
 package com.homecloud.user;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class UserServiceTest {
     UserRepository userRepository = mock(UserRepository.class);
+    PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 
-    UserService userService = new UserService(userRepository);
+    UserService userService = new UserService(userRepository, passwordEncoder);
 
     @Test
     void shouldRejectDuplicateUsername() {
@@ -17,8 +19,9 @@ public class UserServiceTest {
 
         assertThrows(
                 UsernameAlreadyExistsException.class,
-                () -> userService.createUser("kavin", "kavin@example.com")
+                () -> userService.createUser("kavin", "kavin@example.com", "password")
         );
+
     }
 
     @Test
@@ -32,7 +35,7 @@ public class UserServiceTest {
 
         assertThrows(
                 EmailAlreadyExistsException.class,
-                () -> userService.createUser("kavin", "kavin@example.com")
+                () -> userService.createUser("kavin", "kavin@example.com", "password")
         );
     }
 
@@ -45,7 +48,10 @@ public class UserServiceTest {
         when(userRepository.existsByEmail("kavin@example.com"))
                 .thenReturn(false);
 
-        userService.createUser("kavin", "kavin@example.com");
+        when(passwordEncoder.encode("password"))
+                .thenReturn("encodedPassword");
+
+        userService.createUser("kavin", "kavin@example.com", "password");
 
         verify(userRepository, times(1)).save(any(User.class));
     }

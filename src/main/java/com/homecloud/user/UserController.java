@@ -23,7 +23,8 @@ public class UserController {
 
          User user = userService.createUser(
                 request.getUsername(),
-                request.getEmail()
+                request.getEmail(),
+                request.getPassword()
         );
         return new UserResponse(user);
     }
