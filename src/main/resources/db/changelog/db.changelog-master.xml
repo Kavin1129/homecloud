@@ -27,5 +27,13 @@
         </addColumn>
 
     </changeSet>
+    <changeSet id="v3" author="Kavin">
+
+        <addNotNullConstraint
+                tableName="users"
+                columnName="password_hash"
+                columnDataType="VARCHAR(255)"/>
+
+    </changeSet>
 
 </databaseChangeLog>
