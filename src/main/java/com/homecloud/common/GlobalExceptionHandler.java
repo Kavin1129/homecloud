@@ -1,5 +1,6 @@
 package com.homecloud.common;
 
+import com.homecloud.auth.InvalidCredentialsException;
 import com.homecloud.user.UsernameAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,6 +27,17 @@ public class GlobalExceptionHandler {
         return new ApiError(
                 HttpStatus.BAD_REQUEST.value(),
                 "Invalid request"
+        );
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleInvalidCredentials(
+            InvalidCredentialsException exception) {
+
+        return new ApiError(
+                HttpStatus.UNAUTHORIZED.value(),
+                exception.getMessage()
         );
     }
 }
