@@ -1,6 +1,7 @@
 package com.homecloud.auth;
 
 import com.homecloud.auth.dto.LoginRequest;
+import com.homecloud.auth.dto.LoginResponse;
 import com.homecloud.user.User;
 import com.homecloud.user.dto.UserResponse;
 import jakarta.validation.Valid;
@@ -17,8 +18,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public UserResponse login(@Valid @RequestBody LoginRequest request) {
-        User user = authService.login(request.getUsername(), request.getPassword());
-        return new UserResponse(user);
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+        return authService.login(request.getUsername(), request.getPassword());
     }
 }

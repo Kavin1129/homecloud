@@ -1,5 +1,6 @@
 package com.homecloud.auth;
 
+import com.homecloud.auth.dto.LoginResponse;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,13 +11,15 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
-    public User login(String username, String password){
+    public LoginResponse login(String username, String password){
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(()-> new InvalidCredentialsException("Invalid username or password"));
@@ -25,7 +28,8 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid username or password");
         }
 
-        return user;
+        return new LoginResponse(jwtService.generateToken(user.getUsername()));
+
     }
 
 }

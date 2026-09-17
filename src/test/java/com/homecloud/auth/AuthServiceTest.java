@@ -1,5 +1,6 @@
 package com.homecloud.auth;
 
+import com.homecloud.auth.dto.LoginResponse;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -14,9 +15,10 @@ class AuthServiceTest {
 
     UserRepository userRepository = mock(UserRepository.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+    JwtService jwtService = mock(JwtService.class);
 
     AuthService authService =
-            new AuthService(userRepository, passwordEncoder);
+            new AuthService(userRepository, passwordEncoder, jwtService);
 
     @Test
     void shouldLoginWithCorrectPassword() {
@@ -27,17 +29,20 @@ class AuthServiceTest {
         when(userRepository.findByUsername("kavin-auth"))
                 .thenReturn(Optional.of(user));
 
+        when(jwtService.generateToken("kavin-auth"))
+                .thenReturn("test-token");
+
         when(passwordEncoder.matches(
                 "test-password-123",
                 "stored-hash"))
                 .thenReturn(true);
 
-        User result = authService.login(
+        LoginResponse result = authService.login(
                 "kavin-auth",
                 "test-password-123"
         );
 
-        assertEquals("kavin-auth", result.getUsername());
+        assertEquals("test-token", result.getToken());
 
         verify(passwordEncoder)
                 .matches("test-password-123", "stored-hash");
