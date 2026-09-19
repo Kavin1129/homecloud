@@ -5,6 +5,7 @@ import com.homecloud.auth.dto.LoginResponse;
 import com.homecloud.user.User;
 import com.homecloud.user.dto.UserResponse;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,5 +21,20 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request.getUsername(), request.getPassword());
+    }
+
+    @GetMapping("/me")
+    public String me(Authentication authentication) {
+        return authentication.getName();
+    }
+
+    @GetMapping("/authorities")
+    public String authorities(Authentication authentication) {
+        return authentication.getAuthorities().toString();
+    }
+
+    @GetMapping("/admin/test")
+    public String adminTest() {
+        return "You are an admin";
     }
 }

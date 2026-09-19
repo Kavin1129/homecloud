@@ -35,5 +35,73 @@
                 columnDataType="VARCHAR(255)"/>
 
     </changeSet>
+    <changeSet id="v4" author="Kavin">
+
+        <addColumn tableName="users">
+            <column name="role" type="VARCHAR(255)" defaultValue="USER"/>
+        </addColumn>
+
+    </changeSet>
+
+    <changeSet id="v5" author="Kavin">
+
+        <addNotNullConstraint
+                tableName="users"
+                columnName="role"
+                columnDataType="VARCHAR(255)"/>
+
+    </changeSet>
+    <changeSet id="v6" author="kavin">
+
+        <createTable tableName="files">
+
+            <column name="id" type="BIGINT"
+                    autoIncrement="true">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"/>
+            </column>
+
+            <column name="filename" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="owner_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="files"
+                baseColumnNames="owner_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_files_owner"/>
+
+    </changeSet>
+
+    <changeSet id="v7" author="kavin">
+
+        <addColumn tableName="files">
+            <column name="storage_path" type="VARCHAR(500)"/>
+        </addColumn>
+
+        <update tableName="files">
+            <column name="storage_path"
+                    valueComputed="CONCAT(owner_id, '/', id)"/>
+        </update>
+
+        <addNotNullConstraint
+                tableName="files"
+                columnName="storage_path"
+                columnDataType="VARCHAR(500)"/>
+
+        <addUniqueConstraint
+                tableName="files"
+                columnNames="storage_path"
+                constraintName="uk_files_storage_path"/>
+
+    </changeSet>
 
 </databaseChangeLog>

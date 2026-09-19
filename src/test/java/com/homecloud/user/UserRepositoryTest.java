@@ -18,7 +18,8 @@ class UserRepositoryTest {
     @Test
     void shouldSaveAndFindUser() {
 
-        User user = new User("kavin-test", "kavin-test@example.com","password");
+        User user = new User("kavin-test", "kavin-test@example.com");
+        user.setPasswordHash("password");
 
         User savedUser = userRepository.save(user);
 
@@ -33,7 +34,8 @@ class UserRepositoryTest {
     @Test
     void shouldSaveUser() {
 
-        User user = new User("kavin-test", "kavin-test@example.com","password");
+        User user = new User("kavin-test", "kavin-test@example.com");
+        user.setPasswordHash("password");
 
         User savedUser = userRepository.save(user);
 

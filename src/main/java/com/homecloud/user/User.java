@@ -1,5 +1,6 @@
 package com.homecloud.user;
 
+import com.homecloud.user.Role.Role;
 import jakarta.persistence.*;
 
 @Entity
@@ -19,17 +20,16 @@ public class User {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     protected User (){}
 
     public User(String kavin, String mail) {
         this.username = kavin;
         this.email = mail;
-    }
-
-    public User(String s, String mail, String password) {
-        this.username = s;
-        this.email = mail;
-        this.passwordHash = password;
+        this.role = Role.USER;
     }
 
     public Long getId() {
@@ -62,5 +62,13 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
