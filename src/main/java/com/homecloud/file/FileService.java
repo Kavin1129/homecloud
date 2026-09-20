@@ -101,4 +101,23 @@ public class FileService {
         );
     }
 
+    public void deleteFile(Long fileId, String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        File file = fileRepository.findByIdAndOwnerId(fileId, user.getId())
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        fileStorageService.delete(file.getStoragePath());
+
+        fileRepository.delete(file);
+
+        log.info(
+                "File deleted successfully. fileId={}, user={}",
+                fileId,
+                username
+        );
+    }
+
 }

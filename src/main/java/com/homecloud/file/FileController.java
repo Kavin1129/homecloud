@@ -55,4 +55,12 @@ public class FileController {
                 .body(fileDownload.resource());
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFile(@PathVariable Long id, Authentication authentication) {
+
+        fileService.deleteFile(id, authentication.getName());
+
+        return ResponseEntity.noContent().build();
+    }
+
 }
