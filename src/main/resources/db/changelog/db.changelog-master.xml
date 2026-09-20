@@ -104,4 +104,12 @@
 
     </changeSet>
 
+    <changeSet id="v8" author="kavin">
+
+        <addColumn tableName="files">
+            <column name="content_type" type="VARCHAR(100)"/>
+        </addColumn>
+
+    </changeSet>
+
 </databaseChangeLog>

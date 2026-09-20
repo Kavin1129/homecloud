@@ -21,11 +21,15 @@ public class File {
     @Column(nullable = false, unique = true)
     private String storagePath;
 
+    @Column(name = "content_type")
+    private String contentType;
+
     protected File() {}
 
-    public File(String filename, String storagePath, User owner) {
+    public File(String filename, String storagePath,String contentType, User owner) {
         this.filename = filename;
         this.storagePath = storagePath;
+        this.contentType = contentType;
         this.owner = owner;
     }
 
@@ -59,5 +63,13 @@ public class File {
 
     public void setStoragePath(String storagePath) {
         this.storagePath = storagePath;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 }
