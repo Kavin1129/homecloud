@@ -120,4 +120,27 @@ public class FileService {
         );
     }
 
+    public FileResponse renameFile(Long fileId, String newFilename, String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        File file = fileRepository.findByIdAndOwnerId(fileId, user.getId())
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        file.setFilename(newFilename);
+
+        File savedFile = fileRepository.save(file);
+
+        log.info(
+                "File renamed successfully. fileId={}, newFilename={}, user={}",
+                fileId,
+                newFilename,
+                username
+        );
+
+        return  new FileResponse(savedFile);
+
+    }
+
 }

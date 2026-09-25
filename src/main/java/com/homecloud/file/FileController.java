@@ -2,6 +2,7 @@ package com.homecloud.file;
 
 import com.homecloud.file.dto.FileResponse;
 import com.homecloud.file.dto.FileDownload;
+import com.homecloud.file.dto.RenameFileRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -63,4 +64,9 @@ public class FileController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}")
+    public FileResponse renameFile(@PathVariable Long id, @RequestBody RenameFileRequest request, Authentication authentication) {
+
+        return fileService.renameFile(id, request.filename(), authentication.getName());
+    }
 }
