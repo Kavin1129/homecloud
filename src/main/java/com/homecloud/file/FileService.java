@@ -19,24 +19,26 @@ public class FileService {
     private static final Logger log = LoggerFactory.getLogger(FileService.class);
 
     private final FileStorageService fileStorageService;
-    private FileRepository fileRepository;
-    private UserRepository userRepository;
+    private final FileRepository fileRepository;
+    private final UserRepository userRepository;
+    private final FileValidator fileValidator;
 
-    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService) {
+    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
+        this.fileValidator = fileValidator;
     }
 
     public FileResponse createFile(MultipartFile multipartFile, String username){
+
+        String contentType = fileValidator.validate(multipartFile);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(()-> new RuntimeException("User not found: " + username));
 
         String storagePath = fileStorageService.store(multipartFile, user.getId());
         try {
-
-            String contentType = multipartFile.getContentType();
 
             if (contentType == null) {
                 contentType = "application/octet-stream";
