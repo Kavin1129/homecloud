@@ -1,5 +1,6 @@
 package com.homecloud.file;
 
+import com.homecloud.folder.Folder;
 import com.homecloud.user.User;
 import jakarta.persistence.*;
 
@@ -23,6 +24,10 @@ public class File {
 
     @Column(name = "content_type")
     private String contentType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private Folder folder;
 
     protected File() {}
 
@@ -71,5 +76,13 @@ public class File {
 
     public void setContentType(String contentType) {
         this.contentType = contentType;
+    }
+
+    public Folder getFolder() {
+        return folder;
+    }
+
+    public void setFolder(Folder folder) {
+        this.folder = folder;
     }
 }
