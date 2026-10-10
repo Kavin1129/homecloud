@@ -21,11 +21,33 @@ public class FileValidator {
 
     private final Tika tika = new Tika();
 
+    private static final int MAX_FILENAME_LENGTH = 255;
+
+    private void validateFilename(String filename) {
+        if (filename == null || filename.isBlank()) {
+            throw new IllegalArgumentException("Filename cannot be empty");
+        }
+
+        if (filename.length() > MAX_FILENAME_LENGTH) {
+            throw new IllegalArgumentException("Filename is too long");
+        }
+
+        if (filename.contains("/") || filename.contains("\\")) {
+            throw new IllegalArgumentException("Filename contains invalid characters");
+        }
+
+        if (filename.contains("..")) {
+            throw new IllegalArgumentException("Filename contains invalid path characters");
+        }
+    }
+
     public String validate(MultipartFile file) {
 
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
         }
+
+        validateFilename(file.getOriginalFilename());
 
         try {
             String detectedType = tika.detect(file.getInputStream());
