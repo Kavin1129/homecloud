@@ -4,6 +4,8 @@ import com.homecloud.folder.Folder;
 import com.homecloud.user.User;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name="files")
 public class File {
@@ -28,6 +30,12 @@ public class File {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "folder_id")
     private Folder folder;
+
+    @Column(name = "is_trashed", nullable = false)
+    private boolean trashed = false;
+
+    @Column(name = "trashed_at")
+    private LocalDateTime trashedAt;
 
     protected File() {}
 
@@ -84,5 +92,21 @@ public class File {
 
     public void setFolder(Folder folder) {
         this.folder = folder;
+    }
+
+    public boolean isTrashed() {
+        return trashed;
+    }
+
+    public void setTrashed(boolean trashed) {
+        this.trashed = trashed;
+    }
+
+    public LocalDateTime getTrashedAt() {
+        return trashedAt;
+    }
+
+    public void setTrashedAt(LocalDateTime trashedAt) {
+        this.trashedAt = trashedAt;
     }
 }

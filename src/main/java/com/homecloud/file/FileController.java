@@ -36,6 +36,33 @@ public class FileController {
         );
     }
 
+    @GetMapping("/trash")
+    public List<FileResponse> getTrash(Authentication authentication) {
+
+        return fileService.getTrash(authentication.getName());
+    }
+
+
+    @PostMapping("/trash/{id}/restore")
+    public FileResponse restoreFile(@PathVariable Long id, Authentication authentication) {
+
+        return fileService.restoreFile(
+                id,
+                authentication.getName()
+        );
+    }
+
+    @DeleteMapping("/trash/{id}")
+    public ResponseEntity<Void> permanentlyDeleteFile(@PathVariable Long id, Authentication authentication) {
+
+        fileService.permanentlyDeleteFile(
+                id,
+                authentication.getName()
+        );
+
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}")
     public FileResponse getFile(@PathVariable Long id, Authentication authentication) {
 

@@ -12,6 +12,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -129,6 +130,12 @@ public class FileService {
         File file = fileRepository.findByIdAndOwnerId(fileId, user.getId())
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
+        if (file.isTrashed()) {
+            throw new IllegalArgumentException(
+                    "Cannot download a file in trash"
+            );
+        }
+
         Resource resource = fileStorageService.load(file.getStoragePath());
 
         String contentType = file.getContentType();
@@ -140,25 +147,6 @@ public class FileService {
         );
     }
 
-    public void deleteFile(Long fileId, String username) {
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        File file = fileRepository.findByIdAndOwnerId(fileId, user.getId())
-                .orElseThrow(() -> new RuntimeException("File not found"));
-
-        fileStorageService.delete(file.getStoragePath());
-
-        fileRepository.delete(file);
-
-        log.info(
-                "File deleted successfully. fileId={}, user={}",
-                fileId,
-                username
-        );
-    }
-
     public FileResponse renameFile(Long fileId, String newFilename, String username) {
 
         User user = userRepository.findByUsername(username)
@@ -166,6 +154,12 @@ public class FileService {
 
         File file = fileRepository.findByIdAndOwnerId(fileId, user.getId())
                 .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (file.isTrashed()) {
+            throw new IllegalArgumentException(
+                    "Cannot rename a file in trash"
+            );
+        }
 
         file.setFilename(newFilename);
 
@@ -195,7 +189,7 @@ public class FileService {
         if (folderId == null) {
 
             files = fileRepository
-                    .findByOwnerIdAndFolderIsNull(user.getId());
+                    .findByOwnerIdAndFolderIsNullAndTrashedFalse(user.getId());
 
         } else {
 
@@ -206,7 +200,7 @@ public class FileService {
                             new IllegalArgumentException("Folder not found"));
 
             files = fileRepository
-                    .findByOwnerIdAndFolderId(
+                    .findByOwnerIdAndFolderIdAndTrashedFalse(
                             user.getId(),
                             folderId
                     );
@@ -227,6 +221,12 @@ public class FileService {
                 .findByIdAndOwnerId(fileId, user.getId())
                 .orElseThrow(() ->
                         new IllegalArgumentException("File not found"));
+
+        if (file.isTrashed()) {
+            throw new IllegalArgumentException(
+                    "Cannot move a file in trash"
+            );
+        }
 
         Folder targetFolder = null;
 
@@ -275,6 +275,129 @@ public class FileService {
 
         return new FileResponse(
                 fileRepository.save(file)
+        );
+    }
+
+    public void deleteFile(Long fileId, String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        File file = fileRepository
+                .findByIdAndOwnerId(fileId, user.getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("File not found"));
+
+        if (file.isTrashed()) {
+            return;
+        }
+
+        file.setTrashed(true);
+        file.setTrashedAt(LocalDateTime.now());
+
+        fileRepository.save(file);
+
+        log.info(
+                "Moved file '{}' to trash for user '{}'",
+                file.getFilename(),
+                username
+        );
+    }
+
+    public List<FileResponse> getTrash(String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        return fileRepository
+                .findByOwnerIdAndTrashedTrue(user.getId())
+                .stream()
+                .map(FileResponse::new)
+                .toList();
+    }
+
+    public FileResponse restoreFile(Long fileId, String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        File file = fileRepository
+                .findByIdAndOwnerId(fileId, user.getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("File not found"));
+
+        if (!file.isTrashed()) {
+            throw new IllegalArgumentException(
+                    "File is not in trash"
+            );
+        }
+
+        Folder originalFolder = file.getFolder();
+
+        boolean alreadyExists;
+
+        if (originalFolder == null) {
+
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                            file.getFilename(),
+                            user.getId()
+                    );
+
+        } else {
+
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                            file.getFilename(),
+                            user.getId(),
+                            originalFolder.getId()
+                    );
+        }
+
+        if (alreadyExists) {
+            throw new IllegalArgumentException(
+                    "A file with this name already exists in the original folder"
+            );
+        }
+
+        file.setTrashed(false);
+        file.setTrashedAt(null);
+
+        return new FileResponse(
+                fileRepository.save(file)
+        );
+    }
+
+    public void permanentlyDeleteFile(Long fileId, String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        File file = fileRepository
+                .findByIdAndOwnerId(fileId, user.getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("File not found"));
+
+        if (!file.isTrashed()) {
+            throw new IllegalArgumentException(
+                    "File must be in trash before permanent deletion"
+            );
+        }
+
+        String storagePath = file.getStoragePath();
+
+        fileStorageService.delete(storagePath);
+
+        fileRepository.delete(file);
+
+        log.info(
+                "Permanently deleted file '{}' for user '{}'",
+                file.getFilename(),
+                username
         );
     }
 

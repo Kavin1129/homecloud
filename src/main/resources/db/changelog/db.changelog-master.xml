@@ -182,4 +182,22 @@
 
     </changeSet>
 
+    <changeSet id="v12" author="kavin">
+
+        <addColumn tableName="files">
+
+            <column
+                    name="is_trashed"
+                    type="BOOLEAN"
+                    defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="trashed_at"
+                    type="TIMESTAMP"/>
+        </addColumn>
+
+    </changeSet>
+
 </databaseChangeLog>
