@@ -4,18 +4,17 @@ import com.homecloud.auth.dto.LoginResponse;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
-@Repository
+@Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RevokedTokenRepository revokedTokenRepository;
-
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RevokedTokenRepository revokedTokenRepository) {
         this.userRepository = userRepository;
@@ -33,8 +32,9 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid username or password");
         }
 
-        return new LoginResponse(jwtService.generateToken(user.getUsername()));
+        String token = jwtService.generateToken(user.getUsername());
 
+        return new LoginResponse(token);
     }
 
     public void logout(String token) {
@@ -50,5 +50,4 @@ public class AuthService {
             revokedTokenRepository.save(revokedToken);
         }
     }
-
 }

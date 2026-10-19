@@ -1,11 +1,14 @@
 package com.homecloud.auth;
 
+import com.homecloud.config.RestAuthenticationEntryPoint;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,10 +27,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final RevokedTokenRepository revokedTokenRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository, RevokedTokenRepository revokedTokenRepository) {
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository, RevokedTokenRepository revokedTokenRepository, RestAuthenticationEntryPoint authenticationEntryPoint) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.revokedTokenRepository = revokedTokenRepository;
+        this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
     @Override
@@ -39,25 +45,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authorizationHeader.substring(7);
+        String token = authorizationHeader.substring(7).trim();
 
         String tokenHash = TokenHashUtil.hash(token);
 
         if (revokedTokenRepository.existsByTokenHash(tokenHash)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            authenticationEntryPoint.commence(
+                    request,
+                    response,
+                    new BadCredentialsException("Invalid token")
+            );
             return;
         }
 
         try {
             String username = jwtService.extractUsername(token);
             User user = userRepository.findByUsername(username)
-                    .orElseThrow(()-> new InvalidCredentialsException("User not found"));
+                    .orElse(null);
+
+            if (user == null) {
+                authenticationEntryPoint.commence(
+                        request,
+                        response,
+                        new BadCredentialsException("Invalid token")
+                );
+                return;
+            }
             SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_"+user.getRole().name());
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, List.of(authority));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-        catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        catch (JwtException | IllegalArgumentException e) {
+            authenticationEntryPoint.commence(
+                    request,
+                    response,
+                    new BadCredentialsException("Invalid token")
+            );
             return;
         }
 
