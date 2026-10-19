@@ -22,9 +22,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
+    private final RevokedTokenRepository revokedTokenRepository;
+
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository, RevokedTokenRepository revokedTokenRepository) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.revokedTokenRepository = revokedTokenRepository;
     }
 
     @Override
@@ -37,6 +40,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authorizationHeader.substring(7);
+
+        String tokenHash = TokenHashUtil.hash(token);
+
+        if (revokedTokenRepository.existsByTokenHash(tokenHash)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         try {
             String username = jwtService.extractUsername(token);

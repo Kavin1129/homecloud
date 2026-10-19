@@ -200,4 +200,45 @@
 
     </changeSet>
 
+    <changeSet id="v13" author="kavin">
+
+        <createTable tableName="revoked_tokens">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"/>
+            </column>
+
+            <column name="token_hash" type="CHAR(64)">
+                <constraints
+                        nullable="false"
+                        unique="true"/>
+            </column>
+
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <createIndex
+                tableName="revoked_tokens"
+                indexName="idx_revoked_tokens_expires_at">
+
+            <column name="expires_at"/>
+
+        </createIndex>
+
+    </changeSet>
+
+    <changeSet id="v14" author="kavin">
+
+        <modifyDataType
+                tableName="revoked_tokens"
+                columnName="token_hash"
+                newDataType="VARCHAR(64)"/>
+
+    </changeSet>
+
 </databaseChangeLog>

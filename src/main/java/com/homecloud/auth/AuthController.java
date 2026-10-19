@@ -5,6 +5,8 @@ import com.homecloud.auth.dto.LoginResponse;
 import com.homecloud.user.User;
 import com.homecloud.user.dto.UserResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,5 +38,20 @@ public class AuthController {
     @GetMapping("/admin/test")
     public String adminTest() {
         return "You are an admin";
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+
+        if (authorizationHeader == null
+                || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String token = authorizationHeader.substring(7);
+
+        authService.logout(token);
+
+        return ResponseEntity.noContent().build();
     }
 }

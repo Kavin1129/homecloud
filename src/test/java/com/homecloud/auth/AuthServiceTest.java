@@ -16,9 +16,10 @@ class AuthServiceTest {
     UserRepository userRepository = mock(UserRepository.class);
     PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     JwtService jwtService = mock(JwtService.class);
+    RevokedTokenRepository revokedTokenRepository = mock(RevokedTokenRepository.class);
 
     AuthService authService =
-            new AuthService(userRepository, passwordEncoder, jwtService);
+            new AuthService(userRepository, passwordEncoder, jwtService, revokedTokenRepository);
 
     @Test
     void shouldLoginWithCorrectPassword() {
