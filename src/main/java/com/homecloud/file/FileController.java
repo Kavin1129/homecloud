@@ -24,9 +24,16 @@ public class FileController {
     }
 
     @PostMapping
-    public FileResponse createFile(@RequestParam("file") MultipartFile file, Authentication authentication) {
+    public FileResponse createFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "folderId", required = false) Long folderId,
+            Authentication authentication) {
 
-        return fileService.createFile(file, authentication.getName());
+        return fileService.createFile(
+                file,
+                folderId,
+                authentication.getName()
+        );
     }
 
     @GetMapping("/{id}")
@@ -36,10 +43,14 @@ public class FileController {
     }
 
     @GetMapping
-    public List<FileResponse> getMyFiles(Authentication authentication) {
+    public List<FileResponse> getFiles(@RequestParam(value = "folderId", required = false) Long folderId, Authentication authentication) {
 
-        return fileService.getMyFiles(authentication.getName());
+        return fileService.getFiles(
+                folderId,
+                authentication.getName()
+        );
     }
+
 
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id, Authentication authentication) {

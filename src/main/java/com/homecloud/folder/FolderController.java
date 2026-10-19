@@ -1,8 +1,10 @@
 package com.homecloud.folder;
 
+import com.homecloud.file.dto.FileResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/folders")

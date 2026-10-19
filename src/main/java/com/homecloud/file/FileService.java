@@ -2,6 +2,8 @@ package com.homecloud.file;
 
 import com.homecloud.file.dto.FileDownload;
 import com.homecloud.file.dto.FileResponse;
+import com.homecloud.folder.Folder;
+import com.homecloud.folder.FolderRepository;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
 import org.slf4j.Logger;
@@ -22,42 +24,68 @@ public class FileService {
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final FileValidator fileValidator;
+    private final FolderRepository folderRepository;
 
-    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator) {
+    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderRepository folderRepository) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.fileValidator = fileValidator;
+        this.folderRepository = folderRepository;
     }
 
-    public FileResponse createFile(MultipartFile multipartFile, String username){
+    public FileResponse createFile(
+            MultipartFile multipartFile,
+            Long folderId,
+            String username) {
 
         String contentType = fileValidator.validate(multipartFile);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(()-> new RuntimeException("User not found: " + username));
+                .orElseThrow(() ->
+                        new RuntimeException("User not found: " + username));
+
+        Folder folder = null;
+
+        if (folderId != null) {
+
+            folder = folderRepository
+                    .findByIdAndOwnerId(folderId, user.getId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("Folder not found"));
+        }
 
         String storagePath = fileStorageService.store(multipartFile, user.getId());
+
         try {
 
             if (contentType == null) {
                 contentType = "application/octet-stream";
             }
 
-            File file = new File(multipartFile.getOriginalFilename(), storagePath, contentType, user);
+            File file = new File(
+                    multipartFile.getOriginalFilename(),
+                    storagePath,
+                    contentType,
+                    user
+            );
+
+            file.setFolder(folder);
 
             log.info(
-                    "Uploading file '{}' for user '{}'",
+                    "Uploading file '{}' for user '{}' into folder '{}'",
                     multipartFile.getOriginalFilename(),
-                    username
+                    username,
+                    folderId
             );
 
             return new FileResponse(fileRepository.save(file));
 
-        }
-        catch (Exception e){
+        } catch (Exception e) {
+
             fileStorageService.delete(storagePath);
-            throw new RuntimeException("Failed to save file metadata: " + e.getMessage());
+
+            throw new RuntimeException("Failed to save file metadata: " + e.getMessage(), e);
         }
     }
 
@@ -71,17 +99,6 @@ public class FileService {
 
         return new FileResponse(file);
 
-    }
-
-    public List<FileResponse> getMyFiles(String username) {
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return fileRepository.findAllByOwnerId(user.getId())
-                .stream()
-                .map(FileResponse::new)
-                .toList();
     }
 
     public FileDownload downloadFile(Long fileId, String username) {
@@ -143,6 +160,41 @@ public class FileService {
 
         return  new FileResponse(savedFile);
 
+    }
+
+    public List<FileResponse> getFiles(
+            Long folderId,
+            String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        List<File> files;
+
+        if (folderId == null) {
+
+            files = fileRepository
+                    .findByOwnerIdAndFolderIsNull(user.getId());
+
+        } else {
+
+            // Verify the folder belongs to the current user
+            folderRepository
+                    .findByIdAndOwnerId(folderId, user.getId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("Folder not found"));
+
+            files = fileRepository
+                    .findByOwnerIdAndFolderId(
+                            user.getId(),
+                            folderId
+                    );
+        }
+
+        return files.stream()
+                .map(FileResponse::new)
+                .toList();
     }
 
 }

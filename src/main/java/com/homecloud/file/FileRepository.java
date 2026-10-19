@@ -12,4 +12,10 @@ public interface FileRepository extends JpaRepository<File,Long> {
     Optional<File> findByIdAndOwnerId(Long id, Long ownerId);
 
     List<File> findAllByOwnerId(Long ownerId);
+
+    List<File> findByOwnerIdAndFolderIsNull(Long ownerId);
+
+    List<File> findByOwnerIdAndFolderId(
+            Long ownerId,
+            Long folderId);
 }
