@@ -15,7 +15,9 @@ public interface FileRepository extends JpaRepository<File,Long> {
 
     List<File> findByOwnerIdAndFolderIsNull(Long ownerId);
 
-    List<File> findByOwnerIdAndFolderId(
-            Long ownerId,
-            Long folderId);
+    List<File> findByOwnerIdAndFolderId(Long ownerId, Long folderId);
+
+    boolean existsByFilenameAndOwnerIdAndFolderIsNull(String filename, Long ownerId);
+
+    boolean existsByFilenameAndOwnerIdAndFolderId(String filename, Long ownerId, Long folderId);
 }

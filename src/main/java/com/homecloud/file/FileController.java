@@ -80,4 +80,14 @@ public class FileController {
 
         return fileService.renameFile(id, request.filename(), authentication.getName());
     }
+
+    @PutMapping("/{id}/move")
+    public FileResponse moveFile(@PathVariable Long id, @RequestParam Long targetFolderId, Authentication authentication) {
+
+        return fileService.moveFile(
+                id,
+                targetFolderId,
+                authentication.getName()
+        );
+    }
 }

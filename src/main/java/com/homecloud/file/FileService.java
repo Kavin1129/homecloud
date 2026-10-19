@@ -34,10 +34,7 @@ public class FileService {
         this.folderRepository = folderRepository;
     }
 
-    public FileResponse createFile(
-            MultipartFile multipartFile,
-            Long folderId,
-            String username) {
+    public FileResponse createFile(MultipartFile multipartFile, Long folderId, String username) {
 
         String contentType = fileValidator.validate(multipartFile);
 
@@ -53,6 +50,29 @@ public class FileService {
                     .findByIdAndOwnerId(folderId, user.getId())
                     .orElseThrow(() ->
                             new IllegalArgumentException("Folder not found"));
+        }
+
+        boolean alreadyExists;
+
+        if (folder == null) {
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                            multipartFile.getOriginalFilename(),
+                            user.getId()
+                    );
+        } else {
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                            multipartFile.getOriginalFilename(),
+                            user.getId(),
+                            folder.getId()
+                    );
+        }
+
+        if (alreadyExists) {
+            throw new IllegalArgumentException(
+                    "A file with this name already exists here"
+            );
         }
 
         String storagePath = fileStorageService.store(multipartFile, user.getId());
@@ -195,6 +215,67 @@ public class FileService {
         return files.stream()
                 .map(FileResponse::new)
                 .toList();
+    }
+
+    public FileResponse moveFile(Long fileId, Long targetFolderId, String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        File file = fileRepository
+                .findByIdAndOwnerId(fileId, user.getId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("File not found"));
+
+        Folder targetFolder = null;
+
+        if (targetFolderId != null) {
+            targetFolder = folderRepository
+                    .findByIdAndOwnerId(targetFolderId, user.getId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("Target folder not found"));
+        }
+
+        // Already in the requested folder
+        if (targetFolderId != null
+                && file.getFolder() != null
+                && file.getFolder().getId().equals(targetFolderId)) {
+
+            return new FileResponse(file);
+        }
+
+        boolean alreadyExists;
+
+        if (targetFolder == null) {
+
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                            file.getFilename(),
+                            user.getId()
+                    );
+
+        } else {
+
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                            file.getFilename(),
+                            user.getId(),
+                            targetFolder.getId()
+                    );
+        }
+
+        if (alreadyExists) {
+            throw new IllegalArgumentException(
+                    "A file with this name already exists in the target folder"
+            );
+        }
+
+        file.setFolder(targetFolder);
+
+        return new FileResponse(
+                fileRepository.save(file)
+        );
     }
 
 }
