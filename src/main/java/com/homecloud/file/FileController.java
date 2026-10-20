@@ -114,7 +114,7 @@ public class FileController {
     }
 
     @PutMapping("/{id}/move")
-    public FileResponse moveFile(@PathVariable Long id, @RequestParam Long targetFolderId, Authentication authentication) {
+    public FileResponse moveFile(@PathVariable Long id, @RequestParam(value = "targetFolderId", required = false) Long targetFolderId, Authentication authentication) {
 
         return fileService.moveFile(
                 id,

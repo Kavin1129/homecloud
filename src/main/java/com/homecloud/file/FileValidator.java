@@ -23,7 +23,7 @@ public class FileValidator {
 
     private static final int MAX_FILENAME_LENGTH = 255;
 
-    private void validateFilename(String filename) {
+    public void validateFilename(String filename) {
         if (filename == null || filename.isBlank()) {
             throw new IllegalArgumentException("Filename cannot be empty");
         }

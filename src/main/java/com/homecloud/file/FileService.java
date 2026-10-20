@@ -161,6 +161,39 @@ public class FileService {
             );
         }
 
+        fileValidator.validateFilename(newFilename);
+
+        // No actual rename requested
+        if (file.getFilename().equals(newFilename)) {
+            return new FileResponse(file);
+        }
+
+        boolean alreadyExists;
+
+        if (file.getFolder() == null) {
+
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                            newFilename,
+                            user.getId()
+                    );
+
+        } else {
+
+            alreadyExists =
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                            newFilename,
+                            user.getId(),
+                            file.getFolder().getId()
+                    );
+        }
+
+        if (alreadyExists) {
+            throw new IllegalArgumentException(
+                    "A file with this name already exists here"
+            );
+        }
+
         file.setFilename(newFilename);
 
         File savedFile = fileRepository.save(file);
@@ -237,10 +270,14 @@ public class FileService {
                             new IllegalArgumentException("Target folder not found"));
         }
 
-        // Already in the requested folder
-        if (targetFolderId != null
-                && file.getFolder() != null
-                && file.getFolder().getId().equals(targetFolderId)) {
+        // File is already in the requested folder
+        if (file.getFolder() == null && targetFolder == null) {
+            return new FileResponse(file);
+        }
+
+        if (file.getFolder() != null
+                && targetFolder != null
+                && file.getFolder().getId().equals(targetFolder.getId())) {
 
             return new FileResponse(file);
         }
