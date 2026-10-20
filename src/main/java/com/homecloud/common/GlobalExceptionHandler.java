@@ -2,6 +2,7 @@ package com.homecloud.common;
 
 import com.homecloud.auth.InvalidCredentialsException;
 import com.homecloud.auth.TooManyLoginAttemptsException;
+import com.homecloud.user.EmailAlreadyExistsException;
 import com.homecloud.user.UsernameAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -75,5 +76,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(new ApiError(429, exception.getMessage()));
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleEmailAlreadyExists(
+            EmailAlreadyExistsException exception) {
+
+        return new ApiError(
+                HttpStatus.CONFLICT.value(),
+                exception.getMessage()
+        );
     }
 }

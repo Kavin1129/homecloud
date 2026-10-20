@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="v1-initial-schema" author="kavin">
+
+        <!-- ==================== USERS ==================== -->
+        <createTable tableName="users">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="role" type="VARCHAR(255)" defaultValue="USER">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+
+        <!-- ==================== FOLDERS ==================== -->
+        <createTable tableName="folders">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="owner_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="parent_folder_id" type="BIGINT"/>
+
+            <column name="is_trashed" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="trashed_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="folders"
+                baseColumnNames="owner_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_folders_owner"/>
+
+        <addForeignKeyConstraint
+                baseTableName="folders"
+                baseColumnNames="parent_folder_id"
+                referencedTableName="folders"
+                referencedColumnNames="id"
+                constraintName="fk_folders_parent"/>
+
+        <sql>
+            CREATE UNIQUE INDEX ux_folders_root_name
+                ON folders (owner_id, name)
+                WHERE parent_folder_id IS NULL
+                  AND is_trashed = false;
+        </sql>
+
+        <sql>
+            CREATE UNIQUE INDEX ux_folders_nested_name
+                ON folders (owner_id, parent_folder_id, name)
+                WHERE parent_folder_id IS NOT NULL
+                  AND is_trashed = false;
+        </sql>
+
+
+        <!-- ==================== FILES ==================== -->
+        <createTable tableName="files">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="filename" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="owner_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="storage_path" type="VARCHAR(500)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="content_type" type="VARCHAR(100)"/>
+
+            <column name="folder_id" type="BIGINT"/>
+
+            <column name="is_trashed" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="trashed_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="files"
+                baseColumnNames="owner_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_files_owner"/>
+
+        <addForeignKeyConstraint
+                baseTableName="files"
+                baseColumnNames="folder_id"
+                referencedTableName="folders"
+                referencedColumnNames="id"
+                constraintName="fk_files_folder"/>
+
+
+        <!-- ==================== REVOKED TOKENS ==================== -->
+        <createTable tableName="revoked_tokens">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="token_hash" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <createIndex
+                tableName="revoked_tokens"
+                indexName="idx_revoked_tokens_expires_at">
+            <column name="expires_at"/>
+        </createIndex>
+
+
+        <!-- ==================== LOGIN ATTEMPTS ==================== -->
+        <createTable tableName="login_attempts">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="client_ip" type="VARCHAR(45)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="attempt_count" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="first_attempt_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="blocked_until" type="TIMESTAMP WITH TIME ZONE"/>
+
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="login_attempts"
+                columnNames="username, client_ip"
+                constraintName="uk_login_attempts_username_ip"/>
+
+    </changeSet>
+
+</databaseChangeLog>

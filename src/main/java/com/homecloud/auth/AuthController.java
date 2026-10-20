@@ -35,15 +35,6 @@ public class AuthController {
         return authentication.getName();
     }
 
-//    @GetMapping("/authorities")
-//    public String authorities(Authentication authentication) {
-//        return authentication.getAuthorities().toString();
-//    }
-
-    @GetMapping("/admin/test")
-    public String adminTest() {
-        return "You are an admin";
-    }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {

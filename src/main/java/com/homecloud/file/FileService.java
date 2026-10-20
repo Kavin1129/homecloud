@@ -3,7 +3,6 @@ package com.homecloud.file;
 import com.homecloud.file.dto.FileDownload;
 import com.homecloud.file.dto.FileResponse;
 import com.homecloud.folder.Folder;
-import com.homecloud.folder.FolderRepository;
 import com.homecloud.folder.FolderService;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
@@ -25,15 +24,13 @@ public class FileService {
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final FileValidator fileValidator;
-    private final FolderRepository folderRepository;
     private final FolderService folderService;
 
-    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderRepository folderRepository, FolderService folderService) {
+    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderService folderService) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.fileValidator = fileValidator;
-        this.folderRepository = folderRepository;
         this.folderService = folderService;
     }
 
@@ -92,20 +89,19 @@ public class FileService {
 
             file.setFolder(folder);
 
-            log.info(
-                    "Uploading file '{}' for user '{}' into folder '{}'",
-                    multipartFile.getOriginalFilename(),
-                    username,
-                    folderId
-            );
-
             return new FileResponse(fileRepository.save(file));
 
         } catch (Exception e) {
 
             fileStorageService.delete(storagePath);
 
-            throw new RuntimeException("Failed to save file metadata: " + e.getMessage(), e);
+            log.error(
+                    "Failed to save file metadata for storage path '{}'",
+                    storagePath,
+                    e
+            );
+
+            throw new RuntimeException("Failed to save file metadata", e);
         }
     }
 
@@ -220,9 +216,8 @@ public class FileService {
         File savedFile = fileRepository.save(file);
 
         log.info(
-                "File renamed successfully. fileId={}, newFilename={}, user={}",
+                "File renamed successfully. fileId={}, user={}",
                 fileId,
-                newFilename,
                 username
         );
 

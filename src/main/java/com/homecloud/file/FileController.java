@@ -3,6 +3,7 @@ package com.homecloud.file;
 import com.homecloud.file.dto.FileResponse;
 import com.homecloud.file.dto.FileDownload;
 import com.homecloud.file.dto.RenameFileRequest;
+import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,7 +19,7 @@ import java.util.List;
 @RequestMapping("/files")
 public class FileController {
 
-    private FileService fileService;
+    private final FileService fileService;
 
     public FileController(FileService fileService) {
         this.fileService = fileService;
@@ -108,9 +109,16 @@ public class FileController {
     }
 
     @PutMapping("/{id}")
-    public FileResponse renameFile(@PathVariable Long id, @RequestBody RenameFileRequest request, Authentication authentication) {
+    public FileResponse renameFile(
+            @PathVariable Long id,
+            @Valid @RequestBody RenameFileRequest request,
+            Authentication authentication) {
 
-        return fileService.renameFile(id, request.filename(), authentication.getName());
+        return fileService.renameFile(
+                id,
+                request.filename(),
+                authentication.getName()
+        );
     }
 
     @PutMapping("/{id}/move")

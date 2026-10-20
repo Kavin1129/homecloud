@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Locale;
 
 @Service
 public class AuthService {
@@ -27,24 +28,27 @@ public class AuthService {
 
     public LoginResponse login(String username, String password, String clientIp) {
 
-        if (loginAttemptService.isBlocked(username, clientIp)) {
+        String normalizedUsername =
+                username.trim().toLowerCase(Locale.ROOT);
+
+        if (loginAttemptService.isBlocked(normalizedUsername, clientIp)) {
             throw new TooManyLoginAttemptsException(
                     "Too many login attempts. Try again later."
             );
         }
 
-        User user = userRepository.findByUsername(username).orElse(null);
+        User user = userRepository.findByUsername(normalizedUsername).orElse(null);
 
         if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
 
-            loginAttemptService.recordFailure(username, clientIp);
+            loginAttemptService.recordFailure(normalizedUsername, clientIp);
 
             throw new InvalidCredentialsException(
                     "Invalid username or password"
             );
         }
 
-        loginAttemptService.recordSuccess(username, clientIp);
+        loginAttemptService.recordSuccess(normalizedUsername, clientIp);
 
         return new LoginResponse(jwtService.generateToken(user.getUsername()));
     }

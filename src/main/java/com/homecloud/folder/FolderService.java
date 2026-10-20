@@ -223,14 +223,9 @@ public class FolderService {
     public void deleteFolder(Long folderId, String username) {
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Folder folder = getAccessibleFolder(folderId, user.getId());
-
-        if (folder.isTrashed()) {
-            return;
-        }
 
         folder.setTrashed(true);
         folder.setTrashedAt(LocalDateTime.now());

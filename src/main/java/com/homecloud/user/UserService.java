@@ -3,6 +3,8 @@ package com.homecloud.user;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class UserService {
 
@@ -16,16 +18,22 @@ public class UserService {
 
     public User createUser(String username, String email, String password){
 
-        if(userRepository.existsByUsername(username)){
-            throw new UsernameAlreadyExistsException("Username already exists: " + username);
+        String normalizedUsername =
+                username.trim().toLowerCase(Locale.ROOT);
+
+        String normalizedEmail =
+                email.trim().toLowerCase(Locale.ROOT);
+
+        if(userRepository.existsByUsername(normalizedUsername)){
+            throw new UsernameAlreadyExistsException("Username already exists: " + normalizedUsername);
         }
 
-        if(userRepository.existsByEmail(email)){
-            throw new EmailAlreadyExistsException("Email already exists: " + email);
+        if(userRepository.existsByEmail(normalizedEmail)){
+            throw new EmailAlreadyExistsException("Email already exists: " + normalizedEmail);
         }
 
         String passwordHash = passwordEncoder.encode(password);
-        User user = new User(username, email);
+        User user = new User(normalizedUsername, normalizedEmail);
         user.setPasswordHash(passwordHash);
         return userRepository.save(user);
     }

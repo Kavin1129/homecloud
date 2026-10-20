@@ -53,18 +53,13 @@ public class FileStorageService {
 
     public Resource load(String storagePath) {
 
-        try {
-            Path target = resolveStoragePath(storagePath);
+        Path target = resolveStoragePath(storagePath);
 
-            if (!Files.exists(target)) {
-                throw new RuntimeException("File not found");
-            }
-
-            return new FileSystemResource(target);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load file", e);
+        if (!Files.isRegularFile(target)) {
+            throw new RuntimeException("File not found");
         }
+
+        return new FileSystemResource(target);
     }
 
     private Path resolveStoragePath(String storagePath) {

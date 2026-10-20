@@ -1,6 +1,7 @@
 package com.homecloud.folder;
 
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,7 +72,7 @@ public class FolderController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteFolder(
+    public ResponseEntity<Void> deleteFolder(
             @PathVariable Long id,
             Authentication authentication) {
 
@@ -79,6 +80,8 @@ public class FolderController {
                 id,
                 authentication.getName()
         );
+
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/restore")
@@ -95,12 +98,15 @@ public class FolderController {
     }
 
     @DeleteMapping("/{id}/permanent")
-    public void permanentlyDeleteFolder(
+    public ResponseEntity<Void> permanentlyDeleteFolder(
             @PathVariable Long id,
             Authentication authentication) {
 
         folderService.permanentlyDeleteFolder(
                 id,
-                authentication.getName());
+                authentication.getName()
+        );
+
+        return ResponseEntity.noContent().build();
     }
 }

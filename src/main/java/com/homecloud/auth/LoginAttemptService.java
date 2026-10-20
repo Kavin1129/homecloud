@@ -1,6 +1,7 @@
 package com.homecloud.auth;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,6 +31,7 @@ public class LoginAttemptService {
                 .orElse(false);
     }
 
+    @Transactional
     public void recordFailure(String username, String clientIp) {
 
         Instant now = Instant.now();
@@ -47,6 +49,7 @@ public class LoginAttemptService {
 
         if (attempt.getFirstAttemptAt().plus(ATTEMPT_WINDOW).isBefore(now)) {
             attempt.reset(now);
+            attempt.incrementAttemptCount();
             loginAttemptRepository.save(attempt);
             return;
         }
@@ -60,6 +63,7 @@ public class LoginAttemptService {
         loginAttemptRepository.save(attempt);
     }
 
+    @Transactional
     public void recordSuccess(String username, String clientIp) {
 
         loginAttemptRepository
