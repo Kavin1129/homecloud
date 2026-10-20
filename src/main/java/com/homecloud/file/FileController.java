@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.ContentDisposition;
 
 import java.util.List;
 
@@ -83,13 +84,17 @@ public class FileController {
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id, Authentication authentication) {
 
         FileDownload fileDownload = fileService.downloadFile(id, authentication.getName());
-
+        ContentDisposition contentDisposition = ContentDisposition
+                .attachment()
+                .filename(fileDownload.filename())
+                .build();
         return ResponseEntity.ok()
                 .contentType(
                         MediaType.parseMediaType(fileDownload.contentType())
                 )
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + fileDownload.filename() + "\""
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        contentDisposition.toString()
                 )
                 .body(fileDownload.resource());
     }

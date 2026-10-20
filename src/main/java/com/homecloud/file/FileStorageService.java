@@ -25,28 +25,36 @@ public class FileStorageService {
 
         try {
             String storageKey = userId + "/" + UUID.randomUUID();
-            Path target = storageRoot.resolve(storageKey).normalize();
+
+            Path target = resolveStoragePath(storageKey);
+
             Files.createDirectories(target.getParent());
+
             file.transferTo(target);
-            return  storageKey;
-        }
-        catch (IOException e){
-            throw new RuntimeException("Failed to store file: " + e.getMessage());
+
+            return storageKey;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store file", e);
         }
     }
 
     public void delete(String storagePath) {
+
         try {
-            Path target = storageRoot.resolve(storagePath).normalize();
+            Path target = resolveStoragePath(storagePath);
+
             Files.deleteIfExists(target);
+
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete stored file", e);
         }
     }
 
     public Resource load(String storagePath) {
+
         try {
-            Path target = storageRoot.resolve(storagePath).normalize();
+            Path target = resolveStoragePath(storagePath);
 
             if (!Files.exists(target)) {
                 throw new RuntimeException("File not found");
@@ -57,5 +65,18 @@ public class FileStorageService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to load file", e);
         }
+    }
+
+    private Path resolveStoragePath(String storagePath) {
+
+        Path target = storageRoot
+                .resolve(storagePath)
+                .normalize();
+
+        if (!target.startsWith(storageRoot)) {
+            throw new SecurityException("Invalid storage path");
+        }
+
+        return target;
     }
 }
