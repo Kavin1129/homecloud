@@ -4,6 +4,8 @@ import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class FolderService {
 
@@ -46,5 +48,40 @@ public class FolderService {
         Folder folder = new Folder(name, user, parentFolder);
 
         return folderRepository.save(folder);
+    }
+
+    public List<FolderResponse> getFolders(
+            Long parentFolderId,
+            String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        List<Folder> folders;
+
+        if (parentFolderId == null) {
+
+            folders = folderRepository
+                    .findByOwnerIdAndParentFolderIsNull(user.getId());
+
+        } else {
+
+            // Verify that the parent folder belongs to the current user
+            folderRepository
+                    .findByIdAndOwnerId(parentFolderId, user.getId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("Parent folder not found"));
+
+            folders = folderRepository
+                    .findByOwnerIdAndParentFolderId(
+                            user.getId(),
+                            parentFolderId
+                    );
+        }
+
+        return folders.stream()
+                .map(FolderResponse::new)
+                .toList();
     }
 }
