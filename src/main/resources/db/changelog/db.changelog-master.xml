@@ -241,4 +241,42 @@
 
     </changeSet>
 
+    <changeSet id="v15" author="kavin">
+
+        <createTable tableName="login_attempts">
+
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="client_ip" type="VARCHAR(45)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="attempt_count" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="first_attempt_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="blocked_until" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <createIndex
+                tableName="login_attempts"
+                indexName="idx_login_attempts_lookup">
+
+            <column name="username"/>
+            <column name="client_ip"/>
+
+        </createIndex>
+
+    </changeSet>
+
 </databaseChangeLog>

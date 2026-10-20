@@ -1,6 +1,7 @@
 package com.homecloud.common;
 
 import com.homecloud.auth.InvalidCredentialsException;
+import com.homecloud.auth.TooManyLoginAttemptsException;
 import com.homecloud.user.UsernameAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,5 +66,14 @@ public class GlobalExceptionHandler {
                         413,
                         "File size exceeds the maximum allowed limit"
                 ));
+    }
+
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    public ResponseEntity<ApiError> handleTooManyLoginAttempts(
+            TooManyLoginAttemptsException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ApiError(429, exception.getMessage()));
     }
 }

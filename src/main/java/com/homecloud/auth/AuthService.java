@@ -15,26 +15,38 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RevokedTokenRepository revokedTokenRepository;
+    private final LoginAttemptService loginAttemptService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RevokedTokenRepository revokedTokenRepository) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RevokedTokenRepository revokedTokenRepository, LoginAttemptService loginAttemptService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.revokedTokenRepository = revokedTokenRepository;
+        this.loginAttemptService = loginAttemptService;
     }
 
-    public LoginResponse login(String username, String password){
+    public LoginResponse login(String username, String password, String clientIp) {
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(()-> new InvalidCredentialsException("Invalid username or password"));
-
-        if(!passwordEncoder.matches(password, user.getPasswordHash())){
-            throw new InvalidCredentialsException("Invalid username or password");
+        if (loginAttemptService.isBlocked(username, clientIp)) {
+            throw new TooManyLoginAttemptsException(
+                    "Too many login attempts. Try again later."
+            );
         }
 
-        String token = jwtService.generateToken(user.getUsername());
+        User user = userRepository.findByUsername(username).orElse(null);
 
-        return new LoginResponse(token);
+        if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+
+            loginAttemptService.recordFailure(username, clientIp);
+
+            throw new InvalidCredentialsException(
+                    "Invalid username or password"
+            );
+        }
+
+        loginAttemptService.recordSuccess(username, clientIp);
+
+        return new LoginResponse(jwtService.generateToken(user.getUsername()));
     }
 
     public void logout(String token) {
