@@ -9,11 +9,17 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 
     Optional<Folder> findByIdAndOwnerId(Long folderId, Long ownerId);
 
-    boolean existsByNameAndOwnerIdAndParentFolderIsNull(String name, Long ownerId);
+    boolean existsByNameAndOwnerIdAndParentFolderIsNullAndTrashedFalse(
+            String name, Long ownerId);
 
-    boolean existsByNameAndOwnerIdAndParentFolderId(String name, Long ownerId, Long parentFolderId);
+    boolean existsByNameAndOwnerIdAndParentFolderIdAndTrashedFalse(
+            String name, Long ownerId, Long parentFolderId);
 
-    List<Folder> findByOwnerIdAndParentFolderIsNull(Long ownerId);
+    List<Folder> findByOwnerIdAndParentFolderIsNullAndTrashedFalse(Long ownerId);
+
+    List<Folder> findByOwnerIdAndParentFolderIdAndTrashedFalse(Long ownerId, Long parentFolderId);
+
+    List<Folder> findByOwnerIdAndTrashedTrue(Long ownerId);
 
     List<Folder> findByOwnerIdAndParentFolderId(Long ownerId, Long parentFolderId);
 }

@@ -63,4 +63,44 @@ public class FolderController {
 
         return new FolderResponse(folder);
     }
+
+    @GetMapping("/trash")
+    public List<FolderResponse> getTrash(Authentication authentication) {
+
+        return folderService.getTrash(authentication.getName());
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteFolder(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        folderService.deleteFolder(
+                id,
+                authentication.getName()
+        );
+    }
+
+    @PostMapping("/{id}/restore")
+    public FolderResponse restoreFolder(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        Folder folder = folderService.restoreFolder(
+                id,
+                authentication.getName()
+        );
+
+        return new FolderResponse(folder);
+    }
+
+    @DeleteMapping("/{id}/permanent")
+    public void permanentlyDeleteFolder(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        folderService.permanentlyDeleteFolder(
+                id,
+                authentication.getName());
+    }
 }

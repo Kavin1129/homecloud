@@ -4,6 +4,7 @@ import com.homecloud.file.dto.FileDownload;
 import com.homecloud.file.dto.FileResponse;
 import com.homecloud.folder.Folder;
 import com.homecloud.folder.FolderRepository;
+import com.homecloud.folder.FolderService;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
 import org.slf4j.Logger;
@@ -26,13 +27,15 @@ public class FileService {
     private final UserRepository userRepository;
     private final FileValidator fileValidator;
     private final FolderRepository folderRepository;
+    private final FolderService folderService;
 
-    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderRepository folderRepository) {
+    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderRepository folderRepository, FolderService folderService) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.fileValidator = fileValidator;
         this.folderRepository = folderRepository;
+        this.folderService = folderService;
     }
 
     public FileResponse createFile(MultipartFile multipartFile, Long folderId, String username) {
@@ -47,10 +50,7 @@ public class FileService {
 
         if (folderId != null) {
 
-            folder = folderRepository
-                    .findByIdAndOwnerId(folderId, user.getId())
-                    .orElseThrow(() ->
-                            new IllegalArgumentException("Folder not found"));
+            folder = folderService.getAccessibleFolder(folderId, user.getId());
         }
 
         boolean alreadyExists;
@@ -116,10 +116,20 @@ public class FileService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         File file = fileRepository.findByIdAndOwnerId(fileId, user.getId())
-                .orElseThrow(() -> new RuntimeException("File not found: "));
+                .orElseThrow(() -> new IllegalArgumentException("File not found"));
+
+        if (file.isTrashed()) {
+            throw new IllegalArgumentException("File not found");
+        }
+
+        if (file.getFolder() != null) {
+            folderService.getAccessibleFolder(
+                    file.getFolder().getId(),
+                    user.getId()
+            );
+        }
 
         return new FileResponse(file);
-
     }
 
     public FileDownload downloadFile(Long fileId, String username) {
@@ -131,8 +141,13 @@ public class FileService {
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
         if (file.isTrashed()) {
-            throw new IllegalArgumentException(
-                    "Cannot download a file in trash"
+            throw new IllegalArgumentException("File not found");
+        }
+
+        if (file.getFolder() != null) {
+            folderService.getAccessibleFolder(
+                    file.getFolder().getId(),
+                    user.getId()
             );
         }
 
@@ -158,6 +173,13 @@ public class FileService {
         if (file.isTrashed()) {
             throw new IllegalArgumentException(
                     "Cannot rename a file in trash"
+            );
+        }
+
+        if (file.getFolder() != null) {
+            folderService.getAccessibleFolder(
+                    file.getFolder().getId(),
+                    user.getId()
             );
         }
 
@@ -226,11 +248,8 @@ public class FileService {
 
         } else {
 
-            // Verify the folder belongs to the current user
-            folderRepository
-                    .findByIdAndOwnerId(folderId, user.getId())
-                    .orElseThrow(() ->
-                            new IllegalArgumentException("Folder not found"));
+            // Verify the folder is accessible to the current user
+            folderService.getAccessibleFolder(folderId, user.getId());
 
             files = fileRepository
                     .findByOwnerIdAndFolderIdAndTrashedFalse(
@@ -261,13 +280,20 @@ public class FileService {
             );
         }
 
+        if (file.getFolder() != null) {
+            folderService.getAccessibleFolder(
+                    file.getFolder().getId(),
+                    user.getId()
+            );
+        }
+
         Folder targetFolder = null;
 
         if (targetFolderId != null) {
-            targetFolder = folderRepository
-                    .findByIdAndOwnerId(targetFolderId, user.getId())
-                    .orElseThrow(() ->
-                            new IllegalArgumentException("Target folder not found"));
+            targetFolder = folderService.getAccessibleFolder(
+                    targetFolderId,
+                    user.getId()
+            );
         }
 
         // File is already in the requested folder
@@ -330,6 +356,12 @@ public class FileService {
             return;
         }
 
+        if (file.getFolder() != null) {
+            folderService.getAccessibleFolder(
+                    file.getFolder().getId(),
+                    user.getId()
+            );
+        }
         file.setTrashed(true);
         file.setTrashedAt(LocalDateTime.now());
 
@@ -373,6 +405,13 @@ public class FileService {
         }
 
         Folder originalFolder = file.getFolder();
+
+        if (originalFolder != null) {
+            folderService.getAccessibleFolder(
+                    originalFolder.getId(),
+                    user.getId()
+            );
+        }
 
         boolean alreadyExists;
 

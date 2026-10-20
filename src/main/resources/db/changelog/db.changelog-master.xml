@@ -279,4 +279,21 @@
 
     </changeSet>
 
+    <changeSet id="v16" author="kavin">
+
+        <addColumn tableName="folders">
+
+            <column name="is_trashed"
+                    type="BOOLEAN"
+                    defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="trashed_at"
+                    type="TIMESTAMP"/>
+
+        </addColumn>
+
+    </changeSet>
+
 </databaseChangeLog>
