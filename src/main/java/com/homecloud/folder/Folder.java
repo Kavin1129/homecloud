@@ -47,6 +47,10 @@ public class Folder {
         return parentFolder;
     }
 
+    public void setParentFolder(Folder parentFolder) {
+        this.parentFolder = parentFolder;
+    }
+
     public void setName(String name) {
         this.name = name;
     }

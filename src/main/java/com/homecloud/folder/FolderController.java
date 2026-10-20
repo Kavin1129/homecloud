@@ -36,4 +36,31 @@ public class FolderController {
                 authentication.getName()
         );
     }
+
+    @PutMapping("/{id}")
+    public FolderResponse renameFolder(@PathVariable Long id, @Valid @RequestBody RenameFolderRequest request, Authentication authentication) {
+
+        Folder folder = folderService.renameFolder(
+                id,
+                request.name(),
+                authentication.getName()
+        );
+
+        return new FolderResponse(folder);
+    }
+
+    @PutMapping("/{id}/move")
+    public FolderResponse moveFolder(
+            @PathVariable Long id,
+            @RequestParam(value = "targetFolderId", required = false) Long targetFolderId,
+            Authentication authentication) {
+
+        Folder folder = folderService.moveFolder(
+                id,
+                targetFolderId,
+                authentication.getName()
+        );
+
+        return new FolderResponse(folder);
+    }
 }
