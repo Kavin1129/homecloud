@@ -1,0 +1,9 @@
+target/*
+!target/homecloud-0.0.1-SNAPSHOT.jar
+
+.git
+.idea
+.mvn
+src
+*.iml
+README.md
