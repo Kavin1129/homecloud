@@ -5,12 +5,14 @@ import com.homecloud.file.FileRepository;
 import com.homecloud.file.FileStorageService;
 import com.homecloud.user.User;
 import com.homecloud.user.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class FolderService {
 
@@ -297,12 +299,13 @@ public class FolderService {
         boolean alreadyExists;
 
         if (folder.getParentFolder() == null) {
-
+            log.info("Checking for existing folder with name '{}' and no parent folder for user '{}'", folder.getName(), user.getId());
             alreadyExists =
                     folderRepository.existsByNameAndOwnerIdAndParentFolderIsNullAndTrashedFalse(
                             folder.getName(),
                             user.getId()
                     );
+            log.info("Exists check result: {}", alreadyExists);
 
         } else {
 

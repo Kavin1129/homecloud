@@ -3,6 +3,7 @@ package com.homecloud.file;
 import com.homecloud.file.dto.FileResponse;
 import com.homecloud.file.dto.FileDownload;
 import com.homecloud.file.dto.RenameFileRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;

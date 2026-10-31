@@ -19,6 +19,7 @@ public class LoginAttemptService {
         this.loginAttemptRepository = loginAttemptRepository;
     }
 
+    @Transactional
     public boolean isBlocked(String username, String clientIp) {
         return loginAttemptRepository
                 .findByUsernameAndClientIp(username, clientIp)

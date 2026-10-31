@@ -1,5 +1,6 @@
 package com.homecloud.file;
 
+import com.homecloud.audit.AuditService;
 import com.homecloud.file.dto.FileDownload;
 import com.homecloud.file.dto.FileResponse;
 import com.homecloud.folder.Folder;
@@ -25,13 +26,17 @@ public class FileService {
     private final UserRepository userRepository;
     private final FileValidator fileValidator;
     private final FolderService folderService;
+    private final AuditService auditService;
 
-    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderService folderService) {
+    private static final long MAX_STORAGE_BYTES = 30L * 1024 * 1024 * 1024;
+
+    public FileService(FileRepository fileRepository, UserRepository userRepository, FileStorageService fileStorageService, FileValidator fileValidator, FolderService folderService, AuditService auditService) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.fileValidator = fileValidator;
         this.folderService = folderService;
+        this.auditService = auditService;
     }
 
     public FileResponse createFile(MultipartFile multipartFile, Long folderId, String username) {
@@ -53,13 +58,13 @@ public class FileService {
 
         if (folder == null) {
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNullAndTrashedFalse(
                             multipartFile.getOriginalFilename(),
                             user.getId()
                     );
         } else {
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIdAndTrashedFalse(
                             multipartFile.getOriginalFilename(),
                             user.getId(),
                             folder.getId()
@@ -69,6 +74,16 @@ public class FileService {
         if (alreadyExists) {
             throw new IllegalArgumentException(
                     "A file with this name already exists here"
+            );
+        }
+
+        long sizeBytes = multipartFile.getSize();
+
+        long usedStorage = fileRepository.getUsedStorage(user.getId());
+
+        if (usedStorage + sizeBytes > MAX_STORAGE_BYTES) {
+            throw new StorageLimitExceededException(
+                    "Storage limit exceeded. Cannot upload file."
             );
         }
 
@@ -84,12 +99,21 @@ public class FileService {
                     multipartFile.getOriginalFilename(),
                     storagePath,
                     contentType,
+                    sizeBytes,
                     user
             );
 
             file.setFolder(folder);
 
-            return new FileResponse(fileRepository.save(file));
+            FileResponse fileResponse = new FileResponse(fileRepository.save(file));
+            auditService.log(
+                    user,
+                    "UPLOAD",
+                    "FILE",
+                    file.getId(),
+                    "Uploaded file: " + file.getFilename()
+            );
+            return fileResponse;
 
         } catch (Exception e) {
 
@@ -148,6 +172,13 @@ public class FileService {
 
         Resource resource = fileStorageService.load(file.getStoragePath());
 
+        auditService.log(
+                user,
+                "DOWNLOAD",
+                "FILE",
+                file.getId(),
+                "Downloaded file: " + file.getFilename());
+
         String contentType = file.getContentType();
 
         return new FileDownload(
@@ -190,7 +221,7 @@ public class FileService {
         if (file.getFolder() == null) {
 
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNullAndTrashedFalse(
                             newFilename,
                             user.getId()
                     );
@@ -198,7 +229,7 @@ public class FileService {
         } else {
 
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIdAndTrashedFalse(
                             newFilename,
                             user.getId(),
                             file.getFolder().getId()
@@ -212,8 +243,16 @@ public class FileService {
         }
 
         file.setFilename(newFilename);
-
+        file.setUpdatedAt(LocalDateTime.now());
         File savedFile = fileRepository.save(file);
+
+        auditService.log(
+                user,
+                "RENAME",
+                "FILE",
+                file.getId(),
+                "Renamed file to: " + file.getFilename()
+        );
 
         log.info(
                 "File renamed successfully. fileId={}, user={}",
@@ -258,6 +297,8 @@ public class FileService {
     }
 
     public FileResponse moveFile(Long fileId, Long targetFolderId, String username) {
+
+        log.info("Moving file with ID {} to folder ID {} for user {}", fileId, targetFolderId, username);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() ->
@@ -307,7 +348,7 @@ public class FileService {
         if (targetFolder == null) {
 
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNullAndTrashedFalse(
                             file.getFilename(),
                             user.getId()
                     );
@@ -315,7 +356,7 @@ public class FileService {
         } else {
 
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIdAndTrashedFalse(
                             file.getFilename(),
                             user.getId(),
                             targetFolder.getId()
@@ -327,8 +368,17 @@ public class FileService {
                     "A file with this name already exists in the target folder"
             );
         }
-
+        log.info("targetFolder: {}", targetFolder != null ? targetFolder.getId() : "null");
         file.setFolder(targetFolder);
+        file.setUpdatedAt(LocalDateTime.now());
+
+        auditService.log(
+                user,
+                "MOVE",
+                "FILE",
+                file.getId(),
+                "moved file: " + file.getFilename()
+        );
 
         return new FileResponse(
                 fileRepository.save(file)
@@ -358,9 +408,15 @@ public class FileService {
         }
         file.setTrashed(true);
         file.setTrashedAt(LocalDateTime.now());
-
+        file.setUpdatedAt(LocalDateTime.now());
         fileRepository.save(file);
-
+        auditService.log(
+                user,
+                "TRASH",
+                "FILE",
+                file.getId(),
+                "Moved file to trash: " + file.getFilename()
+        );
         log.info(
                 "Moved file '{}' to trash for user '{}'",
                 file.getFilename(),
@@ -412,7 +468,7 @@ public class FileService {
         if (originalFolder == null) {
 
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNull(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIsNullAndTrashedFalse(
                             file.getFilename(),
                             user.getId()
                     );
@@ -420,7 +476,7 @@ public class FileService {
         } else {
 
             alreadyExists =
-                    fileRepository.existsByFilenameAndOwnerIdAndFolderId(
+                    fileRepository.existsByFilenameAndOwnerIdAndFolderIdAndTrashedFalse(
                             file.getFilename(),
                             user.getId(),
                             originalFolder.getId()
@@ -435,7 +491,14 @@ public class FileService {
 
         file.setTrashed(false);
         file.setTrashedAt(null);
-
+        file.setUpdatedAt(LocalDateTime.now());
+        auditService.log(
+                user,
+                "RESTORE",
+                "FILE",
+                file.getId(),
+                "Restored file: " + file.getFilename()
+        );
         return new FileResponse(
                 fileRepository.save(file)
         );
@@ -463,6 +526,13 @@ public class FileService {
         fileStorageService.delete(storagePath);
 
         fileRepository.delete(file);
+
+        auditService.log(
+                user,
+                "PERMANENT_DELETE",
+                "FILE",
+                file.getId(),
+                "Permanently deleted file: " + file.getFilename());
 
         log.info(
                 "Permanently deleted file '{}' for user '{}'",

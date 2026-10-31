@@ -31,6 +31,12 @@ public class File {
     @JoinColumn(name = "folder_id")
     private Folder folder;
 
+    @Column(name = "size_bytes", nullable = false)
+    private Long sizeBytes;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
     @Column(name = "is_trashed", nullable = false)
     private boolean trashed = false;
 
@@ -39,11 +45,19 @@ public class File {
 
     protected File() {}
 
-    public File(String filename, String storagePath,String contentType, User owner) {
+    public File(
+            String filename,
+            String storagePath,
+            String contentType,
+            Long sizeBytes,
+            User owner
+    ) {
         this.filename = filename;
         this.storagePath = storagePath;
         this.contentType = contentType;
+        this.sizeBytes = sizeBytes;
         this.owner = owner;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -92,6 +106,22 @@ public class File {
 
     public void setFolder(Folder folder) {
         this.folder = folder;
+    }
+
+    public Long getSizeBytes() {
+        return sizeBytes;
+    }
+
+    public void setSizeBytes(Long sizeBytes) {
+        this.sizeBytes = sizeBytes;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public boolean isTrashed() {
