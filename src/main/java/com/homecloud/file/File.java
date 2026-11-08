@@ -34,6 +34,22 @@ public class File {
     @Column(name = "size_bytes", nullable = false)
     private Long sizeBytes;
 
+    /**
+     * True when the content on disk is an encrypted envelope. Files stored
+     * before encryption existed carry no envelope and stay false; new files
+     * are always encrypted.
+     */
+    @Column(name = "encrypted", nullable = false)
+    private boolean encrypted = false;
+
+    /**
+     * Id of the key that encrypted the content, null for legacy plaintext
+     * files. Recorded for auditing and rotation bookkeeping; the envelope
+     * header in the stored file remains the source of truth at load time.
+     */
+    @Column(name = "encryption_key_id", length = 64)
+    private String encryptionKeyId;
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -50,13 +66,17 @@ public class File {
             String storagePath,
             String contentType,
             Long sizeBytes,
-            User owner
+            User owner,
+            boolean encrypted,
+            String encryptionKeyId
     ) {
         this.filename = filename;
         this.storagePath = storagePath;
         this.contentType = contentType;
         this.sizeBytes = sizeBytes;
         this.owner = owner;
+        this.encrypted = encrypted;
+        this.encryptionKeyId = encryptionKeyId;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -114,6 +134,22 @@ public class File {
 
     public void setSizeBytes(Long sizeBytes) {
         this.sizeBytes = sizeBytes;
+    }
+
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+
+    public String getEncryptionKeyId() {
+        return encryptionKeyId;
+    }
+
+    public void setEncryptionKeyId(String encryptionKeyId) {
+        this.encryptionKeyId = encryptionKeyId;
     }
 
     public LocalDateTime getUpdatedAt() {

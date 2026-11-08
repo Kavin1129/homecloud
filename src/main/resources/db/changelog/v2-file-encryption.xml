@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="v2-file-encryption" author="kavin">
+
+        <!-- Encrypted-at-rest flag. Files stored before this feature keep
+             false and remain readable as plaintext legacy files; new files
+             always carry an encrypted envelope. -->
+        <addColumn tableName="files">
+            <column name="encrypted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!-- Key id recorded at storage time so the intended key is always
+             auditable. The envelope on disk remains self-describing; this
+             column documents which key SHOULD decrypt the file. -->
+        <addColumn tableName="files">
+            <column name="encryption_key_id" type="VARCHAR(64)"/>
+        </addColumn>
+
+        <createIndex
+                tableName="files"
+                indexName="idx_files_encryption_key_id">
+            <column name="encryption_key_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
