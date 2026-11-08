@@ -87,7 +87,7 @@ public class FileService {
             );
         }
 
-        String storagePath = fileStorageService.store(multipartFile, user.getId());
+        StoredFile storedFile = fileStorageService.store(multipartFile, user.getId());
 
         try {
 
@@ -97,10 +97,12 @@ public class FileService {
 
             File file = new File(
                     multipartFile.getOriginalFilename(),
-                    storagePath,
+                    storedFile.storagePath(),
                     contentType,
                     sizeBytes,
-                    user
+                    user,
+                    true,
+                    storedFile.encryptionKeyId()
             );
 
             file.setFolder(folder);
@@ -117,11 +119,11 @@ public class FileService {
 
         } catch (Exception e) {
 
-            fileStorageService.delete(storagePath);
+            fileStorageService.delete(storedFile.storagePath());
 
             log.error(
                     "Failed to save file metadata for storage path '{}'",
-                    storagePath,
+                    storedFile.storagePath(),
                     e
             );
 
@@ -170,7 +172,12 @@ public class FileService {
             );
         }
 
-        Resource resource = fileStorageService.load(file.getStoragePath());
+        // Encrypted files are transparently decrypted while streaming;
+        // legacy files stored before encryption existed pass through as-is.
+        Resource resource = fileStorageService.load(
+                file.getStoragePath(),
+                file.isEncrypted()
+        );
 
         auditService.log(
                 user,

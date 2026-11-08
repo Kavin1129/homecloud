@@ -2,6 +2,7 @@ package com.homecloud.common;
 
 import com.homecloud.auth.InvalidCredentialsException;
 import com.homecloud.auth.TooManyLoginAttemptsException;
+import com.homecloud.crypto.FileCryptoException;
 import com.homecloud.user.EmailAlreadyExistsException;
 import com.homecloud.user.UsernameAlreadyExistsException;
 import org.springframework.http.HttpStatus;
@@ -86,6 +87,16 @@ public class GlobalExceptionHandler {
         return new ApiError(
                 HttpStatus.CONFLICT.value(),
                 exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(FileCryptoException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiError handleFileCrypto(FileCryptoException exception) {
+
+        return new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "File could not be processed securely"
         );
     }
 }
